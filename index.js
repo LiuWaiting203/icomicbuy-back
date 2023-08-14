@@ -12,6 +12,8 @@ import './passport/passport.js'
 
 const app = express()
 
+app.set('trust proxy', 1)
+
 app.use(rateLimit({
   // 設定一個 IP 15 分鐘內最多 100 次請求
   windowMs: 15 * 60 * 1000,
