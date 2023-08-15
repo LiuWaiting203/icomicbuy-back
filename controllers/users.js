@@ -46,7 +46,8 @@ export const login = async (req, res) => {
         role: req.user.role,
         cart: req.user.cart.reduce((total, current) => total + current.quantity, 0),
         avatar: req.user.avatar,
-        name: req.user.name
+        name: req.user.name,
+        likes: req.user.likes.length
       }
     })
   } catch (error) {
@@ -103,8 +104,105 @@ export const getProfile = (req, res) => {
         role: req.user.role,
         name: req.user.name,
         avatar: req.user.avatar,
-        cart: req.user.cart.reduce((total, current) => total + current.quantity, 0)
+        cart: req.user.cart.reduce((total, current) => total + current.quantity, 0),
+        likes: req.user.likes.length
       }
+    })
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: '發生錯誤'
+    })
+  }
+}
+
+export const getLikes = async (req, res) => {
+  try {
+    const result = await products.aggregate([
+      { $match: { _id: { $in: req.user.likes } } },
+      { $sample: { size: 4 } },
+      {
+        $lookup: {
+          from: 'users',
+          let: { productId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ['$$productId', '$likes']
+                }
+              }
+            },
+            { $count: 'count' }
+          ],
+          as: 'likes'
+        }
+      },
+      {
+        $unwind: {
+          path: '$likes',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          'user.name': 1,
+          'user.avatar': 1,
+          name: 1,
+          price: 1,
+          image: 1,
+          description: 1,
+          category: 1,
+          sell: 1,
+          likes: '$likes.count'
+        }
+      }
+    ])
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+      result
+    })
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: '發生錯誤'
+    })
+  }
+}
+
+export const editLikes = async (req, res) => {
+  try {
+    if (req.body.likes) {
+      if (!req.user.likes.includes(req.params.pid)) {
+        req.user.likes.push(req.params.pid)
+      }
+    } else {
+      if (req.user.likes.includes(req.params.pid)) {
+        const idx = req.user.likes.findIndex(pid => pid.toString() === req.params.pid)
+        req.user.likes.splice(idx, 1)
+      }
+    }
+    await req.user.save()
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+      result: req.body.likes
     })
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({

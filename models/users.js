@@ -46,6 +46,11 @@ const schema = new mongoose.Schema({
   avatar: {
     type: String
   },
+  likes: {
+    type: [mongoose.ObjectId],
+    ref: 'products',
+    default: []
+  },
   tokens: {
     type: [String],
     default: []

@@ -49,3 +49,11 @@ export const jwt = (req, res, next) => {
     next()
   })(req, res, next)
 }
+
+export const jwtOptional = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (_, data, info) => {
+    req.user = data.user
+    req.token = data.token
+    next()
+  })(req, res, next)
+}

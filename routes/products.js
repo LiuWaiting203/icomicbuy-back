@@ -9,9 +9,9 @@ const router = express.Router()
 router.post('/', auth.jwt, contentType('multipart/form-data'), upload, create)
 router.get('/all', auth.jwt, getAll)
 router.get('/user', auth.jwt, getUserId)
-router.get('/random', getRandomProduct)
-router.get('/:id', getProductId)
-router.get('/', get)
+router.get('/random', auth.jwtOptional, getRandomProduct)
+router.get('/:id', auth.jwtOptional, getProductId)
+router.get('/', auth.jwtOptional, get)
 router.patch('/:id', auth.jwt, contentType('multipart/form-data'), upload, edit)
 
 export default router
